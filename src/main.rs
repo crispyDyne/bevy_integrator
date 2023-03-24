@@ -23,7 +23,8 @@ struct PhysicsSchedule;
 // derive resource
 #[derive(Resource, Default)]
 struct PhysicsState {
-    state: HashMap<Entity, (f32, f32, f32)>,
+    state: HashMap<Entity, State1dof>,
+    dstate: HashMap<Entity, State1dof>,
 }
 
 fn integrator_schedule(world: &mut World) {
@@ -34,12 +35,14 @@ fn integrator_schedule(world: &mut World) {
     world.run_schedule(PhysicsSchedule);
 
     // get the state after the physics schedule has run, which include state derivatives
-    let state = &mut world.get_resource_mut::<PhysicsState>().unwrap().state;
+    let physics_state = &mut world.get_resource_mut::<PhysicsState>().unwrap();
+    let dstate = &physics_state.dstate.clone();
+    let state = &mut physics_state.state;
 
-    for (_entity_0, (position_0, velocity_0, _acceleration_0)) in state_0.iter() {
-        let (position, velocity, acceleration) = state.get_mut(_entity_0).unwrap();
-        *position = *position_0 + *velocity * FIXED_TIMESTEP;
-        *velocity = *velocity_0 + *acceleration * FIXED_TIMESTEP;
+    for (_entity_0, state_0) in state_0.iter() {
+        let state = state.get_mut(_entity_0).unwrap();
+        let dstate = dstate.get(_entity_0).unwrap();
+        *state = state_0 + &(dstate * FIXED_TIMESTEP);
     }
 }
 
@@ -108,6 +111,35 @@ pub fn setup_system(
     build_environment(&mut commands, &mut meshes, &mut materials);
 }
 
+// simple 1 degree of freedom state struct
+#[derive(Clone)]
+struct State1dof {
+    position: f32,
+    velocity: f32,
+}
+
+impl std::ops::Add for &State1dof {
+    type Output = State1dof;
+
+    fn add(self, other: &State1dof) -> State1dof {
+        State1dof {
+            position: self.position + other.position,
+            velocity: self.velocity + other.velocity,
+        }
+    }
+}
+
+impl std::ops::Mul<f32> for &State1dof {
+    type Output = State1dof;
+
+    fn mul(self, other: f32) -> State1dof {
+        State1dof {
+            position: self.position * other,
+            velocity: self.velocity * other,
+        }
+    }
+}
+
 // derive the Component trait for the Joint struct
 #[derive(Component)]
 pub struct Joint {
@@ -119,22 +151,28 @@ pub struct Joint {
 }
 
 impl Joint {
-    fn get_state(&self) -> (f32, f32) {
-        (self.position, self.velocity)
+    fn get_state(&self) -> State1dof {
+        State1dof {
+            position: self.position,
+            velocity: self.velocity,
+        }
     }
 
-    fn set_state(&mut self, position: f32, velocity: f32) {
-        self.position = position;
-        self.velocity = velocity;
+    fn set_state(&mut self, state: &State1dof) {
+        self.position = state.position;
+        self.velocity = state.velocity;
     }
 
-    fn get_dstate(&self) -> (f32, f32) {
-        (self.velocity, self.acceleration)
+    fn get_dstate(&self) -> State1dof {
+        State1dof {
+            position: self.velocity,
+            velocity: self.acceleration,
+        }
     }
 
-    fn set_dstate(&mut self, velocity: f32, acceleration: f32) {
-        self.velocity = velocity;
-        self.acceleration = acceleration;
+    fn set_dstate(&mut self, dstate: State1dof) {
+        self.velocity = dstate.position;
+        self.acceleration = dstate.velocity;
     }
 }
 
@@ -194,11 +232,8 @@ fn collect_joint_state(
     mut physics_state: ResMut<PhysicsState>,
 ) {
     for (entity, mut joint) in joint_query.iter_mut() {
-        let (position, _velocity) = joint.get_state();
-        let (velocity, acceleration) = joint.get_dstate();
-        physics_state
-            .state
-            .insert(entity, (position, velocity, acceleration));
+        physics_state.state.insert(entity, joint.get_state());
+        physics_state.dstate.insert(entity, joint.get_dstate());
         joint.force = 0.;
     }
 }
@@ -208,9 +243,8 @@ fn distribute_joint_state(
     physics_state: Res<PhysicsState>,
 ) {
     for (entity, mut joint) in joint_query.iter_mut() {
-        if let Some((position, velocity, acceleration)) = physics_state.state.get(&entity) {
-            joint.set_state(*position, *velocity);
-            joint.set_dstate(*velocity, *acceleration);
+        if let Some(state) = physics_state.state.get(&entity) {
+            joint.set_state(state);
         }
     }
 }
