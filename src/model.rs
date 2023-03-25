@@ -1,5 +1,8 @@
-use crate::{enviornment::build_environment, integrator::Joint};
-use bevy::prelude::*;
+use crate::{
+    enviornment::build_environment,
+    integrator::{Joint, PhysicsState, PhysicsStateDerivative, State1dof},
+};
+use bevy::{prelude::*, utils::HashMap};
 
 pub fn setup(
     mut commands: Commands,
@@ -15,20 +18,42 @@ pub fn build_model(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
 ) {
-    commands
-        .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 1. })),
-            material: materials.add(Color::rgb(0.8, 0.1, 0.2).into()),
-            transform: Transform::from_translation(Vec3::new(0., 0., 0.0)),
-            ..Default::default()
-        })
-        .insert(Joint {
-            position: 0.5,
-            velocity: 0.,
-            acceleration: 0.,
-            force: 0.,
-            mass: 1.,
-        });
+    let mut entity = commands.spawn(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Cube { size: 1. })),
+        material: materials.add(Color::rgb(0.8, 0.1, 0.2).into()),
+        transform: Transform::from_translation(Vec3::new(0., 0., 0.0)),
+        ..Default::default()
+    });
+    entity.insert(Joint {
+        position: 0.5,
+        velocity: 0.,
+        acceleration: 0.,
+        force: 0.,
+        mass: 1.,
+    });
+
+    let entity_id = entity.id();
+
+    // set initial state
+    let mut state = HashMap::new();
+    state.insert(
+        entity_id,
+        State1dof {
+            position: 0.5, // position the cube at 0.5m (so it is initially sitting on the ground)
+            velocity: 0.0,
+        },
+    );
+    commands.insert_resource(PhysicsState { state });
+
+    let mut state = HashMap::new();
+    state.insert(
+        entity_id,
+        State1dof {
+            position: 0.0,
+            velocity: 0.0,
+        },
+    );
+    commands.insert_resource(PhysicsStateDerivative { state });
 }
 
 pub fn spring_force(mut joint_query: Query<&mut Joint>) {

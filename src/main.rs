@@ -7,12 +7,13 @@ mod model;
 use camera_az_el::camera_builder;
 use integrator::{
     bevy_joint_positions, create_physics_schedule, integrator_schedule, PhysicsSchedule,
-    PhysicsState,
 };
 use model::{apply_gravity, damping_force, setup, spring_force};
 
 // set a larger timestep if the animation lags
-const FIXED_TIMESTEP: f32 = 0.002; // 0.002s => 500 fps
+const FIXED_TIMESTEP: f32 = 0.002; // 0.002s => 500 fps (starts lagging around 0.0002 => 5000 fps)
+                                   // rk4 is a 4th order method, and is stable up to 0.5s
+                                   // euler is a 1st order method, and is stable up to ~0.01s
 
 // Main function
 fn main() {
@@ -43,7 +44,6 @@ fn main() {
         ))
         .add_system(camera_az_el::az_el_camera) // setup the camera
         .add_startup_system(setup) // setup the car model and environment
-        .init_resource::<PhysicsState>() // add the physics state resource
         .insert_resource(FixedTime::new_from_secs(FIXED_TIMESTEP)) // set the fixed timestep
         .add_schedule(PhysicsSchedule, physics_schedule) // add the physics schedule
         .add_system(integrator_schedule.in_schedule(CoreSchedule::FixedUpdate)) // run the physics schedule in the fixed timestep loop
