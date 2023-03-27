@@ -1,6 +1,7 @@
 use crate::{
     enviornment::build_environment,
-    integrator::{Joint, PhysicsState, PhysicsStateDerivative, State1dof},
+    integrator::{PhysicsState, PhysicsStateDerivative},
+    joint::{Joint, JointState},
 };
 use bevy::{prelude::*, utils::HashMap};
 
@@ -38,7 +39,7 @@ pub fn build_model(
     let mut state = HashMap::new();
     state.insert(
         entity_id,
-        State1dof {
+        JointState {
             position: 0.5, // position the cube at 0.5m (so it is initially sitting on the ground)
             velocity: 0.0,
         },
@@ -48,7 +49,7 @@ pub fn build_model(
     let mut state = HashMap::new();
     state.insert(
         entity_id,
-        State1dof {
+        JointState {
             position: 0.0,
             velocity: 0.0,
         },

@@ -2,6 +2,7 @@ use bevy::prelude::*;
 mod camera_az_el;
 mod enviornment;
 pub mod integrator;
+pub mod joint;
 mod model;
 
 use camera_az_el::camera_builder;

@@ -1,5 +1,5 @@
+use crate::joint::{Joint, JointState};
 use bevy::{ecs::schedule::ScheduleLabel, prelude::*, utils::HashMap};
-
 // Define the physics schedule which will be run in the fixed timestep loop
 #[derive(ScheduleLabel, Debug, Hash, PartialEq, Eq, Clone)]
 pub struct PhysicsSchedule;
@@ -14,11 +14,11 @@ enum PhysicsSet {
 
 #[derive(Resource, Default, Clone, Debug)]
 pub struct PhysicsState {
-    pub state: HashMap<Entity, State1dof>,
+    pub state: HashMap<Entity, JointState>,
 }
 #[derive(Resource, Default, Clone, Debug)]
 pub struct PhysicsStateDerivative {
-    pub state: HashMap<Entity, State1dof>,
+    pub state: HashMap<Entity, JointState>,
 }
 
 impl std::ops::Mul<f32> for &PhysicsStateDerivative {
@@ -156,76 +156,6 @@ fn collect_state_derivatives(
     for (entity, mut joint) in joint_query.iter_mut() {
         physics_dstate.state.insert(entity, joint.get_dstate());
         joint.force = 0.;
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct State1dof {
-    pub position: f32,
-    pub velocity: f32,
-}
-
-impl std::ops::Add for &State1dof {
-    type Output = State1dof;
-
-    fn add(self, other: &State1dof) -> State1dof {
-        State1dof {
-            position: self.position + other.position,
-            velocity: self.velocity + other.velocity,
-        }
-    }
-}
-
-impl std::ops::Mul<f32> for &State1dof {
-    type Output = State1dof;
-
-    fn mul(self, other: f32) -> State1dof {
-        State1dof {
-            position: self.position * other,
-            velocity: self.velocity * other,
-        }
-    }
-}
-
-impl std::ops::AddAssign<&State1dof> for State1dof {
-    fn add_assign(&mut self, other: &State1dof) {
-        self.position += other.position;
-        self.velocity += other.velocity;
-    }
-}
-
-#[derive(Component)]
-pub struct Joint {
-    pub position: f32,
-    pub velocity: f32,
-    pub acceleration: f32,
-    pub force: f32,
-    pub mass: f32,
-}
-
-impl Joint {
-    fn get_state(&self) -> State1dof {
-        State1dof {
-            position: self.position,
-            velocity: self.velocity,
-        }
-    }
-
-    fn set_state(&mut self, state: &State1dof) {
-        self.position = state.position;
-        self.velocity = state.velocity;
-    }
-
-    fn get_dstate(&self) -> State1dof {
-        State1dof {
-            position: self.velocity,
-            velocity: self.acceleration,
-        }
-    }
-
-    fn set_dstate(&mut self, dstate: State1dof) {
-        self.velocity = dstate.position;
-        self.acceleration = dstate.velocity;
     }
 }
 
