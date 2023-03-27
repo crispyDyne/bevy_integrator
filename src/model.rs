@@ -1,9 +1,28 @@
 use crate::{
     enviornment::build_environment,
-    integrator::{PhysicsState, PhysicsStateDerivative},
+    integrator::{PhysicsState, StateMap},
     joint::{Joint, JointState},
 };
-use bevy::{prelude::*, utils::HashMap};
+
+use bevy::prelude::*;
+
+pub fn spring_force(mut joint_query: Query<&mut Joint>) {
+    for mut joint in joint_query.iter_mut() {
+        joint.force += -10.0 * (joint.position - 3.);
+    }
+}
+
+pub fn damping_force(mut joint_query: Query<&mut Joint>) {
+    for mut joint in joint_query.iter_mut() {
+        joint.force += -0.1 * joint.velocity;
+    }
+}
+
+pub fn apply_gravity(mut joint_query: Query<&mut Joint>) {
+    for mut joint in joint_query.iter_mut() {
+        joint.force += -9.81 * joint.mass;
+    }
+}
 
 pub fn setup(
     mut commands: Commands,
@@ -36,41 +55,21 @@ pub fn build_model(
     let entity_id = entity.id();
 
     // set initial state
-    let mut state = HashMap::new();
-    state.insert(
+    let mut states: StateMap<Joint> = StateMap::new();
+    states.insert(
         entity_id,
         JointState {
             position: 0.5, // position the cube at 0.5m (so it is initially sitting on the ground)
             velocity: 0.0,
         },
     );
-    commands.insert_resource(PhysicsState { state });
-
-    let mut state = HashMap::new();
-    state.insert(
+    let mut dstates: StateMap<Joint> = StateMap::new();
+    dstates.insert(
         entity_id,
         JointState {
-            position: 0.0,
+            position: 0.0, // position the cube at 0.5m (so it is initially sitting on the ground)
             velocity: 0.0,
         },
     );
-    commands.insert_resource(PhysicsStateDerivative { state });
-}
-
-pub fn spring_force(mut joint_query: Query<&mut Joint>) {
-    for mut joint in joint_query.iter_mut() {
-        joint.force += -10.0 * (joint.position - 3.);
-    }
-}
-
-pub fn damping_force(mut joint_query: Query<&mut Joint>) {
-    for mut joint in joint_query.iter_mut() {
-        joint.force += -0.1 * joint.velocity;
-    }
-}
-
-pub fn apply_gravity(mut joint_query: Query<&mut Joint>) {
-    for mut joint in joint_query.iter_mut() {
-        joint.force += -9.81 * joint.mass;
-    }
+    commands.insert_resource(PhysicsState::<Joint> { states, dstates });
 }

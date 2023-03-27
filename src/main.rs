@@ -1,14 +1,13 @@
 use bevy::prelude::*;
 mod camera_az_el;
 mod enviornment;
-pub mod integrator;
-pub mod joint;
+mod integrator;
+mod joint;
 mod model;
-
 use camera_az_el::camera_builder;
-use integrator::{
-    bevy_joint_positions, create_physics_schedule, integrator_schedule, PhysicsSchedule,
-};
+
+use integrator::{create_physics_schedule, integrator_schedule, PhysicsSchedule};
+use joint::{bevy_joint_positions, calculate_acceleration, Joint};
 use model::{apply_gravity, damping_force, setup, spring_force};
 
 // set a larger timestep if the animation lags
@@ -19,7 +18,11 @@ const FIXED_TIMESTEP: f32 = 0.002; // 0.002s => 500 fps (starts lagging around 0
 // Main function
 fn main() {
     // create the physics schedule
-    let physics_schedule = create_physics_schedule((spring_force, damping_force, apply_gravity));
+    let physics_schedule = create_physics_schedule::<Joint, _, _, _>(
+        (),
+        (spring_force, damping_force, apply_gravity),
+        (calculate_acceleration,),
+    );
 
     // Create App
     App::new()
@@ -47,7 +50,7 @@ fn main() {
         .add_startup_system(setup) // setup the car model and environment
         .insert_resource(FixedTime::new_from_secs(FIXED_TIMESTEP)) // set the fixed timestep
         .add_schedule(PhysicsSchedule, physics_schedule) // add the physics schedule
-        .add_system(integrator_schedule.in_schedule(CoreSchedule::FixedUpdate)) // run the physics schedule in the fixed timestep loop
+        .add_system(integrator_schedule::<Joint>.in_schedule(CoreSchedule::FixedUpdate)) // run the physics schedule in the fixed timestep loop
         .add_system(bevy_joint_positions) // update the bevy joint positions
         .run();
 }

@@ -1,6 +1,11 @@
-use bevy::prelude::Component;
+use std::ops::{Add, Mul};
 
-#[derive(Component)]
+use bevy::prelude::*;
+
+use crate::integrator::Stateful;
+
+// this is an example of a stateful component that can be integrated in the physics engine
+#[derive(Component, Debug)]
 pub struct Joint {
     pub position: f32,
     pub velocity: f32,
@@ -9,29 +14,36 @@ pub struct Joint {
     pub mass: f32,
 }
 
-impl Joint {
-    pub fn get_state(&self) -> JointState {
+impl Stateful for Joint {
+    type State = JointState;
+
+    fn get_state(&self) -> Self::State {
         JointState {
             position: self.position,
             velocity: self.velocity,
         }
     }
 
-    pub fn set_state(&mut self, state: &JointState) {
+    fn set_state(&mut self, state: &Self::State) {
         self.position = state.position;
         self.velocity = state.velocity;
     }
 
-    pub fn get_dstate(&self) -> JointState {
+    fn get_dstate(&self) -> Self::State {
         JointState {
             position: self.velocity,
             velocity: self.acceleration,
         }
     }
 
-    pub fn set_dstate(&mut self, dstate: JointState) {
+    fn set_dstate(&mut self, dstate: Self::State) {
         self.velocity = dstate.position;
         self.acceleration = dstate.velocity;
+    }
+
+    fn reset(&mut self) {
+        self.acceleration = 0.;
+        self.force = 0.;
     }
 }
 
@@ -41,10 +53,10 @@ pub struct JointState {
     pub velocity: f32,
 }
 
-impl std::ops::Add for &JointState {
+impl Add for JointState {
     type Output = JointState;
 
-    fn add(self, other: &JointState) -> JointState {
+    fn add(self, other: JointState) -> JointState {
         JointState {
             position: self.position + other.position,
             velocity: self.velocity + other.velocity,
@@ -52,7 +64,7 @@ impl std::ops::Add for &JointState {
     }
 }
 
-impl std::ops::Mul<f32> for &JointState {
+impl Mul<f32> for JointState {
     type Output = JointState;
 
     fn mul(self, other: f32) -> JointState {
@@ -63,9 +75,14 @@ impl std::ops::Mul<f32> for &JointState {
     }
 }
 
-impl std::ops::AddAssign<&JointState> for JointState {
-    fn add_assign(&mut self, other: &JointState) {
-        self.position += other.position;
-        self.velocity += other.velocity;
+pub fn calculate_acceleration(mut joint_query: Query<&mut Joint>) {
+    for mut joint in joint_query.iter_mut() {
+        joint.acceleration = joint.force / joint.mass;
+    }
+}
+
+pub fn bevy_joint_positions(mut joint_transform_query: Query<(&mut Joint, &mut Transform)>) {
+    for (joint, mut transform) in joint_transform_query.iter_mut() {
+        transform.translation = Vec3::new(0., 0., joint.position);
     }
 }
