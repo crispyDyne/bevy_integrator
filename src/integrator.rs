@@ -123,17 +123,28 @@ pub struct PhysicsState<T: Stateful> {
     pub dstates: StateMap<T>,
 }
 
-pub fn create_physics_schedule<T, MInit, M, MFinal>(
-    systems_init: impl IntoSystemConfigs<MInit>,
-    systems: impl IntoSystemConfigs<M>,
-    systems_final: impl IntoSystemConfigs<MFinal>,
-) -> Schedule
-where
-    T: Component + Stateful,
-{
-    let mut physics_schedule = Schedule::new();
-    physics_schedule
-        .configure_sets(
+pub trait PhysicsScheduleExt {
+    fn add_physics_systems<T, MInit, M, MFinal>(
+        &mut self,
+        systems_init: impl IntoSystemConfigs<MInit>,
+        systems: impl IntoSystemConfigs<M>,
+        systems_final: impl IntoSystemConfigs<MFinal>,
+    ) -> &mut Self
+    where
+        T: Component + Stateful;
+}
+
+impl PhysicsScheduleExt for Schedule {
+    fn add_physics_systems<T, MInit, M, MFinal>(
+        &mut self,
+        systems_init: impl IntoSystemConfigs<MInit>,
+        systems: impl IntoSystemConfigs<M>,
+        systems_final: impl IntoSystemConfigs<MFinal>,
+    ) -> &mut Self
+    where
+        T: Component + Stateful,
+    {
+        self.configure_sets(
             (
                 SolverSet::Pre,
                 PhysicsSet::Initialize,
@@ -149,7 +160,8 @@ where
         .add_systems(systems_final.in_set(PhysicsSet::Finalize))
         .add_system(collect_state_derivatives::<T>.in_set(SolverSet::Post));
 
-    physics_schedule
+        self
+    }
 }
 
 fn distribute_state<T: Component + Stateful>(

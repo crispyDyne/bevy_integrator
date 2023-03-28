@@ -6,7 +6,7 @@ mod joint;
 mod model;
 use camera_az_el::camera_builder;
 
-use integrator::{create_physics_schedule, integrator_schedule, PhysicsSchedule};
+use integrator::{integrator_schedule, PhysicsSchedule, PhysicsScheduleExt};
 use joint::{bevy_joint_positions, calculate_acceleration, Joint};
 use model::{apply_gravity, damping_force, setup, spring_force};
 
@@ -17,8 +17,8 @@ const FIXED_TIMESTEP: f32 = 0.002; // 0.002s => 500 fps (starts lagging around 0
 
 // Main function
 fn main() {
-    // create the physics schedule
-    let physics_schedule = create_physics_schedule::<Joint, _, _, _>(
+    let mut physics_schedule = Schedule::new();
+    physics_schedule.add_physics_systems::<Joint, _, _, _>(
         (),
         (spring_force, damping_force, apply_gravity),
         (calculate_acceleration,),
