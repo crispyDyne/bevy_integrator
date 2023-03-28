@@ -6,7 +6,7 @@ mod joint;
 mod model;
 use camera_az_el::camera_builder;
 
-use integrator::{integrator_schedule, PhysicsSchedule, PhysicsScheduleExt};
+use integrator::{integrator_schedule, PhysicsSchedule, PhysicsScheduleExt, Solver};
 use joint::{bevy_joint_positions, calculate_acceleration, Joint};
 use model::{apply_gravity, damping_force, setup, spring_force};
 
@@ -50,6 +50,7 @@ fn main() {
         .add_startup_system(setup) // setup the car model and environment
         .insert_resource(FixedTime::new_from_secs(FIXED_TIMESTEP)) // set the fixed timestep
         .add_schedule(PhysicsSchedule, physics_schedule) // add the physics schedule
+        .insert_resource(Solver::RK4) // set the solver to use
         .add_system(integrator_schedule::<Joint>.in_schedule(CoreSchedule::FixedUpdate)) // run the physics schedule in the fixed timestep loop
         .add_system(bevy_joint_positions) // update the bevy joint positions
         .run();

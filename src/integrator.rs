@@ -102,7 +102,15 @@ pub fn integrator_schedule<T: Stateful>(world: &mut World) {
     // get the time (need to track time in the fixed timestep loop)
     let time = 0.0; // constant for now
 
-    let state = rk4::<T>(world, &state_0, time, time_step);
+    // get Solver resource from world
+    let solver = world.get_resource::<Solver>().unwrap();
+
+    let state = match solver {
+        Solver::Euler => euler::<T>(world, &state_0, time, time_step),
+        Solver::Heun => heun::<T>(world, &state_0, time, time_step),
+        Solver::Midpoint => midpoint::<T>(world, &state_0, time, time_step),
+        Solver::RK4 => rk4::<T>(world, &state_0, time, time_step),
+    };
 
     let mut physics_state = world.get_resource_mut::<PhysicsState<T>>().unwrap();
     physics_state.states = state;
@@ -184,6 +192,14 @@ fn collect_state_derivatives<T: Component + Stateful>(
         let joint_state = joint.get_dstate();
         physics_state.dstates.insert(entity, joint_state);
     }
+}
+
+#[derive(Resource)]
+pub enum Solver {
+    Euler,
+    Heun,
+    Midpoint,
+    RK4,
 }
 
 fn euler<T: Stateful>(world: &mut World, state: &StateMap<T>, t: f32, dt: f32) -> StateMap<T> {
