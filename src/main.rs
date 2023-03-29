@@ -29,7 +29,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 resolution: (1200., 900.).into(),
-                title: "Linear".to_string(),
+                title: "integrator".to_string(),
                 resizable: true,
                 ..default()
             }),
