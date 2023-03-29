@@ -175,6 +175,19 @@ impl PhysicsScheduleExt for Schedule {
     }
 }
 
+pub fn initialize_state<T: Component + Stateful>(
+    mut commands: Commands,
+    joint_query: Query<(Entity, &T)>,
+) {
+    let mut states = StateMap::<T>::new();
+    let mut dstates = StateMap::<T>::new();
+    for (entity, joint) in joint_query.iter() {
+        states.insert(entity, joint.get_state());
+        dstates.insert(entity, joint.get_dstate());
+    }
+    commands.insert_resource(PhysicsState::<T> { states, dstates });
+}
+
 fn distribute_state<T: Component + Stateful>(
     mut joint_query: Query<(Entity, &mut T)>,
     physics_state: Res<PhysicsState<T>>,

@@ -7,7 +7,9 @@ use model::{apply_gravity, damping_force, spring_force};
 use bevy::prelude::*;
 use bevy_integrator::{
     camera_az_el::{self, camera_builder},
-    integrator::{integrator_schedule, PhysicsSchedule, PhysicsScheduleExt, Solver},
+    integrator::{
+        initialize_state, integrator_schedule, PhysicsSchedule, PhysicsScheduleExt, Solver,
+    },
 };
 
 // set a larger timestep if the animation lags
@@ -47,6 +49,7 @@ fn main() {
         ))
         .add_system(camera_az_el::az_el_camera)
         .add_startup_system(model::setup) // setup the model and environment
+        .add_startup_system(initialize_state::<Joint>.in_base_set(StartupSet::PostStartup)) // setup the car model and environment
         .insert_resource(FixedTime::new_from_secs(FIXED_TIMESTEP)) // set the fixed timestep
         .add_schedule(PhysicsSchedule, physics_schedule) // add the physics schedule
         .insert_resource(Solver::RK4) // set the solver to use
