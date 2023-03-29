@@ -1,8 +1,7 @@
+use bevy::prelude::*;
 use std::ops::{Add, Mul};
 
-use bevy::prelude::*;
-
-use crate::integrator::Stateful;
+use bevy_integrator::integrator::Stateful;
 
 // this is an example of a stateful component that can be integrated in the physics engine
 #[derive(Component, Debug)]

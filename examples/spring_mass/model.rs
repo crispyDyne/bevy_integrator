@@ -1,10 +1,10 @@
-use crate::{
-    enviornment::build_environment,
-    integrator::{PhysicsState, StateMap},
-    joint::{Joint, JointState},
-};
-
 use bevy::prelude::*;
+
+use crate::joint::{Joint, JointState};
+use bevy_integrator::{
+    environment::build_environment,
+    integrator::{PhysicsState, StateMap},
+};
 
 pub fn spring_force(mut joint_query: Query<&mut Joint>) {
     for mut joint in joint_query.iter_mut() {
@@ -63,11 +63,12 @@ pub fn build_model(
             velocity: 0.0,
         },
     );
+    // set initial derivatives of state
     let mut dstates: StateMap<Joint> = StateMap::new();
     dstates.insert(
         entity_id,
         JointState {
-            position: 0.0, // position the cube at 0.5m (so it is initially sitting on the ground)
+            position: 0.0,
             velocity: 0.0,
         },
     );

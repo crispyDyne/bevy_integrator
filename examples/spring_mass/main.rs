@@ -1,19 +1,19 @@
-use bevy::prelude::*;
-mod camera_az_el;
-mod enviornment;
-mod integrator;
 mod joint;
-mod model;
-use camera_az_el::camera_builder;
+pub mod model;
 
-use integrator::{integrator_schedule, PhysicsSchedule, PhysicsScheduleExt, Solver};
 use joint::{bevy_joint_positions, calculate_acceleration, Joint};
 use model::{apply_gravity, damping_force, setup, spring_force};
 
+use bevy::prelude::*;
+use bevy_integrator::{
+    camera_az_el::{self, camera_builder},
+    integrator::{integrator_schedule, PhysicsSchedule, PhysicsScheduleExt, Solver},
+};
+
 // set a larger timestep if the animation lags
 const FIXED_TIMESTEP: f32 = 0.002; // 0.002s => 500 fps (starts lagging around 0.0002 => 5000 fps)
-                                   // rk4 is a 4th order method, and is stable up to 0.5s
-                                   // euler is a 1st order method, and is stable up to ~0.01s
+                                   // RK4 is a 4th order method, and is stable up to 0.5s
+                                   // Euler is a 1st order method, and is stable up to ~0.01s
 
 // Main function
 fn main() {
@@ -24,7 +24,6 @@ fn main() {
         (calculate_acceleration,),
     );
 
-    // Create App
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
