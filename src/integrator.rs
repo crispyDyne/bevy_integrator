@@ -166,7 +166,7 @@ impl PhysicsScheduleExt for Schedule {
                 .chain(), // This defines the ordering of the system sets
         )
         .add_system(distribute_state::<T>.in_set(SolverSet::Pre))
-        .add_systems((systems_init).in_set(PhysicsSet::Evaluate))
+        .add_systems(systems_init.in_set(PhysicsSet::Initialize))
         .add_systems(systems.in_set(PhysicsSet::Evaluate))
         .add_systems(systems_final.in_set(PhysicsSet::Finalize))
         .add_system(collect_state_derivatives::<T>.in_set(SolverSet::Post));
