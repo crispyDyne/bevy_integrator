@@ -1,5 +1,8 @@
-use bevy::{ecs::schedule::ScheduleLabel, prelude::*, utils::HashMap};
-use std::ops::{Add, Mul};
+use bevy::{ecs::schedule::ScheduleLabel, prelude::*};
+use std::{
+    collections::HashMap,
+    ops::{Add, Mul},
+};
 
 // Define the physics schedule which will be run in the fixed timestep loop
 #[derive(ScheduleLabel, Debug, Hash, PartialEq, Eq, Clone)]
