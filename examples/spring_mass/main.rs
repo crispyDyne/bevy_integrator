@@ -2,7 +2,7 @@ mod joint;
 pub mod model;
 
 use joint::{bevy_joint_positions, calculate_acceleration, Joint};
-use model::{apply_gravity, damping_force, setup, spring_force};
+use model::{apply_gravity, damping_force, spring_force};
 
 use bevy::prelude::*;
 use bevy_integrator::{
@@ -45,8 +45,8 @@ fn main() {
             10.,
             camera_az_el::UpDirection::Z,
         ))
-        .add_system(camera_az_el::az_el_camera) // setup the camera
-        .add_startup_system(setup) // setup the car model and environment
+        .add_system(camera_az_el::az_el_camera)
+        .add_startup_system(model::setup) // setup the model and environment
         .insert_resource(FixedTime::new_from_secs(FIXED_TIMESTEP)) // set the fixed timestep
         .add_schedule(PhysicsSchedule, physics_schedule) // add the physics schedule
         .insert_resource(Solver::RK4) // set the solver to use
