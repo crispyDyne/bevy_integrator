@@ -11,6 +11,13 @@ pub struct Joint {
     pub acceleration: f32,
     pub force: f32,
     pub mass: f32,
+    pub name: String,
+}
+
+impl Into<f32> for JointState {
+    fn into(self) -> f32 {
+        self.position
+    }
 }
 
 impl Stateful for Joint {
@@ -43,6 +50,10 @@ impl Stateful for Joint {
     fn reset(&mut self) {
         self.acceleration = 0.;
         self.force = 0.;
+    }
+
+    fn get_name(&self) -> String {
+        self.name.clone()
     }
 }
 

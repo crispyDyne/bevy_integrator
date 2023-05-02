@@ -47,5 +47,6 @@ pub fn build_model(
         acceleration: 0.,
         force: 0.,
         mass: 1.,
+        name: "cube".to_string(),
     });
 }

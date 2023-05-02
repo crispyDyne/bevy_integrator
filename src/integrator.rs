@@ -120,12 +120,19 @@ pub fn integrator_schedule<T: Stateful>(world: &mut World) {
 }
 
 pub trait Stateful: std::fmt::Debug + 'static {
-    type State: Add<Output = Self::State> + Mul<f32, Output = Self::State> + Clone + Sync + Send;
+    type State: Add<Output = Self::State>
+        + Mul<f32, Output = Self::State>
+        + Clone
+        + Sync
+        + Send
+        + Into<f32>;
+
     fn get_state(&self) -> Self::State;
     fn set_state(&mut self, state: &Self::State);
     fn get_dstate(&self) -> Self::State;
     fn set_dstate(&mut self, dstate: Self::State);
     fn reset(&mut self);
+    fn get_name(&self) -> String;
 }
 
 #[derive(Resource)]
