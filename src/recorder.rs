@@ -39,16 +39,14 @@ fn create_table<T: Component + Stateful>(recorder: &mut Recorder, query: &Query<
     sql_params.push(0.0);
     for joint in query.iter() {
         let name = joint.get_name();
-        // if the lenght of name is greater than 0
-        if name.len() > 0 {
-            let state_name = format!("{}_state", joint.get_name());
-            let dstate_name = format!("{}_dstate", joint.get_name());
-            sql_table_defenition.push_str(&format!("{} REAL, ", state_name));
-            sql_table_defenition.push_str(&format!("{} REAL, ", dstate_name));
-            sql_table_insert.push_str(&format!("{}, {}, ", state_name, dstate_name));
-            sql_params.push(joint.get_state().into());
-            sql_params.push(joint.get_dstate().into());
-        }
+        println!("{}", name);
+        let state_name = format!("{}_state", joint.get_name());
+        let dstate_name = format!("{}_dstate", joint.get_name());
+        sql_table_defenition.push_str(&format!("{} REAL, ", state_name));
+        sql_table_defenition.push_str(&format!("{} REAL, ", dstate_name));
+        sql_table_insert.push_str(&format!("{}, {}, ", state_name, dstate_name));
+        sql_params.push(joint.get_state().into());
+        sql_params.push(joint.get_dstate().into());
     }
 
     // remove last comma
@@ -60,7 +58,7 @@ fn create_table<T: Component + Stateful>(recorder: &mut Recorder, query: &Query<
     sql_table_insert.pop();
     sql_table_insert.push_str(") VALUES (");
     sql_table_insert.push_str("?, ");
-    for _ in query.iter().skip(1) {
+    for _ in query.iter() {
         sql_table_insert.push_str("?, ?, ");
     }
     sql_table_insert.pop();
@@ -84,15 +82,9 @@ fn insert_data<T: Component + Stateful>(recorder: &mut Recorder, query: &Query<&
     let mut sql_params = Vec::<f32>::new();
     sql_params.push(time);
     for joint in query.iter() {
-        let name = joint.get_name();
-        // if the lenght of name is greater than 0
-        if name.len() > 0 {
-            println!("{}", name);
-            sql_params.push(joint.get_state().into());
-            sql_params.push(joint.get_dstate().into());
-        }
+        sql_params.push(joint.get_state().into());
+        sql_params.push(joint.get_dstate().into());
     }
-    println!("{:?}", sql_params.len());
     let sql_params: Vec<&dyn rusqlite::types::ToSql> = sql_params
         .iter()
         .map(|x| x as &dyn rusqlite::types::ToSql)
