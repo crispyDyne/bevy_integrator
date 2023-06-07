@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::integrator::Stateful;
 use bevy::prelude::*;
 use rusqlite::Connection;
@@ -114,7 +116,14 @@ pub fn create_recorder(world: &mut World) {
     println!("Recorder created")
 }
 
-fn read_data(folder_name: String, file_name: String) {
+#[derive(Debug, Resource)]
+pub struct RecordedData {
+    pub data: HashMap<String, Vec<f32>>,
+}
+
+pub fn load_recorded_data(world: &mut World) {
+    let folder_name = "./data";
+    let file_name = "dummy.db";
     let full_path = format!("{}/{}", folder_name, file_name);
     let conn = Connection::open(full_path).unwrap();
 
@@ -129,34 +138,43 @@ fn read_data(folder_name: String, file_name: String) {
         if let Some(t) = table {
             let name = t.get::<_, String>(1).unwrap();
             let type_ = t.get::<_, String>(2).unwrap();
-            println!("{}: {}", name, type_);
+            // println!("{}: {}", name, type_);
             table_names.push(name);
             table_types.push(type_);
         } else {
             break;
         }
     }
-    println!("{:?}", table_names);
-    // for each table print the column names
-    for table_name in table_names.iter() {
-        let stmt = conn
-            .prepare(format!("SELECT * FROM {}", table_name).as_str())
-            .unwrap();
-        let columns = stmt.column_names();
-        println!("{:?}", columns);
 
-        // // print every 30th row of the table
-        // let mut rows = stmt.query([]).unwrap();
-        // let mut i = 0;
-        // while let Ok(row) = rows.next() {
-        //     if i % 30 == 0 {
-        //         if let Some(r) = row {
-        //             println!("{:?}", r);
-        //         } else {
-        //             break;
-        //         }
-        //     }
-        //     i += 1;
-        // }
+    // get data from first table and insert it into a hashmap
+    let stmt = conn
+        .prepare(format!("SELECT * FROM {}", table_names[0]).as_str())
+        .unwrap();
+    let columns = stmt.column_names();
+
+    let mut data = HashMap::<String, Vec<f32>>::new();
+    for column in columns.iter() {
+        // get data from the current column
+        let mut col_stmt = conn
+            .prepare(format!("SELECT {} FROM {}", column, table_names[0]).as_str())
+            .unwrap();
+
+        // get data from rows
+        let mut rows = col_stmt.query([]).unwrap();
+
+        // loop through rows and add data to vector
+        let mut column_data = Vec::new();
+        while let Ok(row) = rows.next() {
+            if let Some(r) = row {
+                let value = r.get::<_, f32>(0).unwrap();
+                column_data.push(value);
+            } else {
+                break;
+            }
+        }
+
+        data.insert(column.to_string(), column_data);
     }
+
+    world.insert_resource(RecordedData { data: data });
 }
